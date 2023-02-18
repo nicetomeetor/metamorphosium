@@ -134,19 +134,40 @@ var __generator =
   };
 exports.__esModule = true;
 var puppeteer_1 = require('puppeteer');
-var categories = ['devtools.timeline'];
+var constants_1 = require('./constants');
+var categories = [
+  '-*',
+  'toplevel',
+  'blink.console',
+  'blink.user_timing',
+  'benchmark',
+  'devtools.timeline',
+  'disabled-by-default-blink.debug.layout',
+  'disabled-by-default-devtools.timeline',
+  'disabled-by-default-devtools.timeline.frame',
+  'disabled-by-default-devtools.timeline.stack',
+  'disabled-by-default-devtools.screenshot',
+];
 var url = 'https://google.com';
+var indications = new Set(['firstContentfulPaint']);
 function get(url) {
   return __awaiter(this, void 0, void 0, function () {
-    var browser, page;
+    var browser,
+      page,
+      bufferTrace,
+      stringTrace,
+      parsedTrace,
+      traceEvents,
+      i,
+      traceEvent;
     return __generator(this, function (_a) {
       switch (_a.label) {
         case 0:
+          console.info(constants_1.INFO.START);
           return [
             4 /*yield*/,
             puppeteer_1['default'].launch({
               headless: true,
-              args: ['--no-sandbox', '--disable-setuid-sandbox'],
             }),
           ];
         case 1:
@@ -154,22 +175,43 @@ function get(url) {
           return [4 /*yield*/, browser.newPage()];
         case 2:
           page = _a.sent();
+          console.time(constants_1.TIME.EXECUTION);
           return [4 /*yield*/, page.tracing.start()];
         case 3:
           _a.sent();
           return [4 /*yield*/, page.goto(url)];
         case 4:
           _a.sent();
-          console.log(1);
           return [4 /*yield*/, page.tracing.stop()];
         case 5:
-          _a.sent();
+          bufferTrace = _a.sent() || {};
+          stringTrace = bufferTrace.toString();
+          parsedTrace = JSON.parse(stringTrace);
+          traceEvents = parsedTrace.traceEvents;
+          for (i = 0; i < traceEvents.length; i++) {
+            traceEvent = traceEvents[i];
+            if (indications.has(traceEvent.name)) {
+              console.log('kek', traceEvent.ts);
+            }
+          }
+          // fs.writeFileSync('a.json', stringTrace)
+          // const trace = TraceProcessor.computeTraceEnd(parsedTrace)
+          console.timeEnd(constants_1.TIME.EXECUTION);
+          // console.log(trace);
           return [4 /*yield*/, browser.close()];
         case 6:
+          // console.log(trace);
           _a.sent();
           return [2 /*return*/];
       }
     });
   });
 }
-get(url);
+var main = function () {
+  return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+      return [2 /*return*/, get(url)];
+    });
+  });
+};
+main();
