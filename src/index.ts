@@ -1,6 +1,5 @@
-import { Cluster } from 'puppeteer-cluster';
-
-import { TIME, INFO, EVENT_NAME } from './constants';
+import Collector from './Collector';
+import { TIME, INFO } from './constants';
 
 const categories = [
   '-*',
@@ -16,62 +15,28 @@ const categories = [
   'disabled-by-default-devtools.screenshot',
 ];
 
-const url = 'https://google.com';
+const url = 'https://www.google.com';
 
-const indications = new Set(['firstContentfulPaint']);
+const indications = ['firstContentfulPaint'];
 
 async function get(url: string): Promise<void> {
   console.info(INFO.START);
 
-  const puppeteerOptions = {
-    headless: true,
-    args: ['--use-gl=egl'],
-    categories,
-  };
-
-  const cluster = await Cluster.launch({
-    concurrency: Cluster.CONCURRENCY_BROWSER,
-    maxConcurrency: 2,
-    retryLimit: 2,
-    puppeteerOptions,
-  });
-
-  await cluster.task(async ({ page, data: id }) => {
-    await page.tracing.start();
-
-    await page.goto(url);
-
-    const bufferTrace = (await page.tracing.stop()) || {};
-    const stringTrace = bufferTrace.toString();
-    const parsedTrace = JSON.parse(stringTrace);
-    const traceEvents = parsedTrace.traceEvents;
-
-    let nav = 0;
-
-    for (let i = 0; i < traceEvents.length; i++) {
-      const traceEvent = traceEvents[i];
-
-      if (
-        traceEvent.name === EVENT_NAME.NAVIGATION_START &&
-        traceEvent.args.data.documentLoaderURL.includes(url)
-      ) {
-        nav = traceEvent.ts;
-      }
-
-      if (indications.has(traceEvent.name)) {
-        console.log(traceEvent.name, (traceEvent.ts - nav) / 1000000);
-      }
-    }
-  });
-
   console.time(TIME.EXECUTION);
 
-  for (let i = 0; i < 10; i++) {
-    cluster.queue(i);
-  }
+  const collector = new Collector(
+    url,
+    {
+      maxConcurrency: 2,
+      retryLimit: 2,
+      number: 10,
+    },
+    indications
+  );
 
-  await cluster.idle();
-  await cluster.close();
+  const result = await collector.start();
+
+  console.log(result);
 
   console.timeEnd(TIME.EXECUTION);
 }
