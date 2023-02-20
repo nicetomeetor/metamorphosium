@@ -17,7 +17,12 @@ const categories = [
 
 const url = 'https://www.google.com';
 
-const indications = ['firstContentfulPaint'];
+const indications = [
+  'firstContentfulPaint',
+  'ParseHTML',
+  'domInteractive',
+  'domComplete',
+];
 
 async function get(url: string): Promise<void> {
   console.info(INFO.START);

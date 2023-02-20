@@ -1,11 +1,12 @@
 import { Cluster } from 'puppeteer-cluster';
+import cliProgress from 'cli-progress';
 
 import { EVENT_NAME } from './constants';
 
 export default class Collector {
-  private url: string;
+  private readonly url: string;
   private collectorOptions: any;
-  private indications: any;
+  private readonly indications: any;
   // private categories: string[]
 
   constructor(url: string, collectorOptions: any, indications: any) {
@@ -37,6 +38,14 @@ export default class Collector {
       metrics[indication] = [];
     }
 
+    const bar1 = new cliProgress.SingleBar(
+      {},
+      cliProgress.Presets.shades_classic
+    );
+
+    bar.start(this.collectorOptions.number, 0);
+    let a = 0;
+
     await cluster.task(async ({ page, data: id }) => {
       await page.tracing.start();
 
@@ -66,6 +75,8 @@ export default class Collector {
           });
         }
       }
+
+      bar.update(++a);
     });
 
     for (let i = 0; i < this.collectorOptions.number; i++) {
@@ -74,6 +85,7 @@ export default class Collector {
 
     await cluster.idle();
     await cluster.close();
+    bar.stop();
 
     return metrics;
   }

@@ -13,11 +13,13 @@
   "dependencies": {
     "@types/puppeteer": "^7.0.4",
     "chrome-launcher": "^0.15.1",
+    "cli-progress": "^3.12.0",
     "lighthouse": "^9.6.8",
     "puppeteer": "^19.6.3",
     "puppeteer-cluster": "^0.23.0"
   },
   "devDependencies": {
+    "@types/cli-progress": "^3.11.0",
     "@types/node": "^18.13.0",
     "prettier": "^2.8.4",
     "typescript": "^4.9.5"
