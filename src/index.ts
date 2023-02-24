@@ -15,13 +15,20 @@ const categories = [
   'disabled-by-default-devtools.screenshot',
 ];
 
-const url = 'https://www.google.com';
+const url = 'https://pptr.dev/';
 
 const indications = [
   'firstContentfulPaint',
+  // 'firstMeaningFullPaint',
+  'firstPaint',
   'ParseHTML',
   'domInteractive',
   'domComplete',
+  'EvaluateScript',
+  'RunTask',
+  'loadEventEnd',
+  'loadEventStart',
+  'v8.compile',
 ];
 
 async function get(url: string): Promise<void> {
@@ -32,8 +39,8 @@ async function get(url: string): Promise<void> {
   const collector = new Collector(
     url,
     {
-      maxConcurrency: 2,
-      retryLimit: 2,
+      maxConcurrency: 3,
+      retryLimit: 10,
       number: 10,
     },
     indications

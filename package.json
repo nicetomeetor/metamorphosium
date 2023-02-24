@@ -16,7 +16,8 @@
     "cli-progress": "^3.12.0",
     "lighthouse": "^9.6.8",
     "puppeteer": "^19.6.3",
-    "puppeteer-cluster": "^0.23.0"
+    "puppeteer-cluster": "^0.23.0",
+    "tracium": "^0.2.1"
   },
   "devDependencies": {
     "@types/cli-progress": "^3.11.0",

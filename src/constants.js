@@ -1,9 +1,12 @@
-'use strict';
+"use strict";
 exports.__esModule = true;
-exports.INFO = exports.TIME = void 0;
+exports.EVENT_NAME = exports.INFO = exports.TIME = void 0;
 exports.TIME = {
-  EXECUTION: 'Execution time',
+    EXECUTION: 'Execution time'
 };
 exports.INFO = {
-  START: 'Start job',
+    START: 'Start job'
+};
+exports.EVENT_NAME = {
+    NAVIGATION_START: 'navigationStart'
 };
