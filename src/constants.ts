@@ -1,5 +1,6 @@
 export const TIME = {
-  EXECUTION: 'Execution time',
+  EXECUTION: 23,
+  WRITE_RESULT: 'Write file time',
 } as const;
 
 export const INFO = {
