@@ -1,6 +1,6 @@
 import Collector from './Collector';
 import Comparator from './Comparator';
-import { TIME, INFO } from './constants';
+import { TIME, INFO, FILE_NAME } from './constants';
 import { writeFileSync } from 'node:fs';
 
 const a = {
@@ -298,8 +298,9 @@ async function get(url: string): Promise<void> {
   // console.log(result);
 
   const comparison = Comparator.compare(a, b);
+  const comparisonJsonString = JSON.stringify(comparison);
   console.time(TIME.WRITE_RESULT);
-  writeFileSync('./result.json', JSON.stringify(comparison), 'utf8');
+  writeFileSync(FILE_NAME.RESULT, comparisonJsonString);
   console.timeEnd(TIME.WRITE_RESULT);
   console.timeEnd(TIME.EXECUTION);
 }

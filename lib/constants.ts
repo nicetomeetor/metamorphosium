@@ -1,5 +1,5 @@
 export const TIME = {
-  EXECUTION: 23,
+  EXECUTION: 'Execution time',
   WRITE_RESULT: 'Write file time',
 } as const;
 
@@ -10,3 +10,7 @@ export const INFO = {
 export const EVENT_NAME = {
   NAVIGATION_START: 'navigationStart',
 } as const;
+
+export const FILE_NAME = {
+  RESULT: 'result.json',
+};
