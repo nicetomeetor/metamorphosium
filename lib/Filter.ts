@@ -1,7 +1,7 @@
 import { quantile } from 'simple-statistics';
 
 export default class Filter {
-  public static process(array: number[]) {
+  public static process(array: number[]): number[] {
     const q1 = quantile(array, 0.25);
     const q3 = quantile(array, 0.75);
     const iqr = q3 - q1;

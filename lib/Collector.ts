@@ -1,40 +1,69 @@
+import cliProgress, { SingleBar } from 'cli-progress';
 import { Cluster } from 'puppeteer-cluster';
-import cliProgress from 'cli-progress';
+import { PuppeteerNodeLaunchOptions } from 'puppeteer';
 
 import { EVENT_NAME } from './constants';
 
-export default class Collector {
-  private collectorOptions: any;
-  private readonly indications: any;
+export type Indications = string[];
 
-  private progress: any = new cliProgress.SingleBar(
-    {
-      format: `|{bar}| {value} / {total} ({percentage}%) Jobs`,
-      hideCursor: true,
-    },
-    cliProgress.Presets.legacy
-  );
+export type CollectorOptions = {
+  maxConcurrency: number;
+  retryLimit: number;
+  number: number;
+  timeout: number;
+  puppeteerOptions: PuppeteerNodeLaunchOptions;
+};
+
+type TraceEvent = {
+  name: string;
+  args?: {
+    data?: {
+      documentLoaderURL?: string;
+    };
+  };
+  ph: 'R' | 'X';
+  dur: number;
+  ts: number;
+};
+
+type CollectorOutcome = {
+  [key: string]: number;
+};
+
+export type CollectorResult = {
+  [key: string]: number[];
+};
+
+export default class Collector {
+  private readonly collectorOptions: CollectorOptions;
+  private readonly indications: Indications;
+
+  private progress: SingleBar;
 
   private time: number = 1000000;
-  private cursor: number = 0;
-  private navTime: number = 0;
 
-  // private categories: string[]
-
-  constructor(collectorOptions: any, indications: any) {
+  constructor(collectorOptions: CollectorOptions, indications: Indications) {
     this.collectorOptions = collectorOptions;
     this.indications = indications;
+
+    this.progress = new cliProgress.SingleBar(
+      {
+        format: `|{bar}| {value} / {total} ({percentage}%) Jobs`,
+        hideCursor: true,
+      },
+      cliProgress.Presets.legacy
+    );
   }
 
-  private getTime(evt: number, ts: number) {
+  private getTime(evt: number, ts: number): number {
     return (evt - ts) / this.time;
   }
 
-  private getDuration(dur: number) {
+  private getDuration(dur: number): number {
     return dur / this.time;
   }
 
-  private getNavTime(url: string, traceEvents: any[]) {
+  private getNavTime(url: string, traceEvents: TraceEvent[]): number {
     let ts = 0;
 
     for (let i = 0; i < traceEvents.length; i++) {
@@ -42,7 +71,7 @@ export default class Collector {
 
       if (
         traceEvent.name === EVENT_NAME.NAVIGATION_START &&
-        traceEvent.args.data.documentLoaderURL.includes(url)
+        traceEvent?.args?.data?.documentLoaderURL?.includes(url)
       ) {
         ts = traceEvent.ts;
         break;
@@ -52,19 +81,16 @@ export default class Collector {
     return ts;
   }
 
-  public async start(url: string) {
+  public async evaluate(url: string): Promise<CollectorResult> {
     const cluster = await Cluster.launch({
       concurrency: Cluster.CONCURRENCY_BROWSER,
       maxConcurrency: this.collectorOptions.maxConcurrency,
       retryLimit: this.collectorOptions.retryLimit,
-      timeout: 10000,
-      puppeteerOptions: {
-        args: ['--use-gl=egl'],
-        // categories: this.categories,
-      },
+      timeout: this.collectorOptions.timeout,
+      puppeteerOptions: this.collectorOptions.puppeteerOptions,
     });
 
-    const metrics: any = {};
+    const metrics: CollectorResult = {};
 
     for (let i = 0; i < this.indications.length; i++) {
       const indication = this.indications[i];
@@ -73,16 +99,8 @@ export default class Collector {
 
     this.progress.start(this.collectorOptions.number, 0);
 
-    await cluster.task(async ({ page, data: index }) => {
+    await cluster.task(async ({ page, data }) => {
       await page.tracing.start();
-
-      // await page.setDefaultTimeout(0);
-      // await page.setDefaultNavigationTimeout(0);
-
-      const client = await page.target().createCDPSession();
-
-      await client.send('Network.clearBrowserCache');
-      await client.send('Network.clearBrowserCookies');
 
       await page.goto(url, { waitUntil: 'load' });
 
@@ -95,14 +113,10 @@ export default class Collector {
 
       let ts = this.getNavTime(url, traceEvents);
 
-      const obj: any = {};
+      const outcome: CollectorOutcome = {};
 
       for (let i = 0; i < this.indications.length; i++) {
-        obj[this.indications[i]] = {
-          name: this.indications[i],
-          value: 0,
-          ph: '',
-        };
+        outcome[this.indications[i]] = 0;
       }
 
       for (let i = 0; i < traceEvents.length; i++) {
@@ -113,15 +127,13 @@ export default class Collector {
         }
 
         if (traceEvent.ph === 'R') {
-          obj[traceEvent.name].value = this.getTime(traceEvent.ts, ts);
-          obj[traceEvent.name].ph = traceEvent.ph;
+          outcome[traceEvent.name] = this.getTime(traceEvent.ts, ts);
         } else if (traceEvent.ph === 'X') {
-          obj[traceEvent.name].value += this.getDuration(traceEvent.dur);
-          obj[traceEvent.name].ph = traceEvent.ph;
+          outcome[traceEvent.name] += this.getDuration(traceEvent.dur);
         }
       }
 
-      for (const [key, value] of Object.entries(obj)) {
+      for (const [key, value] of Object.entries(outcome)) {
         metrics[key].push(value);
       }
 
@@ -134,6 +146,7 @@ export default class Collector {
 
     await cluster.idle();
     await cluster.close();
+
     this.progress.stop();
 
     return metrics;
