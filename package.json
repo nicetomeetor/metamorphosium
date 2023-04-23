@@ -1,8 +1,8 @@
 {
-  "name": "metamorphosa",
+  "name": "metamorphosium",
   "version": "0.1.0",
   "description": "",
-  "main": "lib/index.ts",
+  "main": "build/index.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

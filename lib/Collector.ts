@@ -1,18 +1,18 @@
 import { Cluster } from 'puppeteer-cluster';
 import cliProgress from 'cli-progress';
-import * as fs from 'fs';
-import Tracium from 'tracium';
 
 import { EVENT_NAME } from './constants';
 
 export default class Collector {
-  private readonly url: string;
   private collectorOptions: any;
   private readonly indications: any;
 
   private progress: any = new cliProgress.SingleBar(
-    {},
-    cliProgress.Presets.shades_classic
+    {
+      format: `|{bar}| {value} / {total} ({percentage}%) Jobs`,
+      hideCursor: true,
+    },
+    cliProgress.Presets.legacy
   );
 
   private time: number = 1000000;
@@ -21,8 +21,7 @@ export default class Collector {
 
   // private categories: string[]
 
-  constructor(url: string, collectorOptions: any, indications: any) {
-    this.url = url;
+  constructor(collectorOptions: any, indications: any) {
     this.collectorOptions = collectorOptions;
     this.indications = indications;
   }
@@ -35,7 +34,7 @@ export default class Collector {
     return dur / this.time;
   }
 
-  private getNavTime(traceEvents: any[]) {
+  private getNavTime(url: string, traceEvents: any[]) {
     let ts = 0;
 
     for (let i = 0; i < traceEvents.length; i++) {
@@ -43,7 +42,7 @@ export default class Collector {
 
       if (
         traceEvent.name === EVENT_NAME.NAVIGATION_START &&
-        traceEvent.args.data.documentLoaderURL.includes(this.url)
+        traceEvent.args.data.documentLoaderURL.includes(url)
       ) {
         ts = traceEvent.ts;
         break;
@@ -53,7 +52,7 @@ export default class Collector {
     return ts;
   }
 
-  public async start() {
+  public async start(url: string) {
     const cluster = await Cluster.launch({
       concurrency: Cluster.CONCURRENCY_BROWSER,
       maxConcurrency: this.collectorOptions.maxConcurrency,
@@ -85,7 +84,7 @@ export default class Collector {
       await client.send('Network.clearBrowserCache');
       await client.send('Network.clearBrowserCookies');
 
-      await page.goto(this.url, { waitUntil: 'load' });
+      await page.goto(url, { waitUntil: 'load' });
 
       const bufferTrace = (await page.tracing.stop())!;
       const stringTrace = bufferTrace.toString();
@@ -94,7 +93,7 @@ export default class Collector {
 
       const traceEvents = parsedTrace.traceEvents;
 
-      let ts = this.getNavTime(traceEvents);
+      let ts = this.getNavTime(url, traceEvents);
 
       const obj: any = {};
 

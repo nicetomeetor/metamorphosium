@@ -22,5 +22,4 @@ export default class Filter {
 
     return result;
   }
-  constructor() {}
 }
