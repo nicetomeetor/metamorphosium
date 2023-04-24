@@ -22,7 +22,7 @@ export default class Comparator {
     func: Function,
     first: number[],
     second: number[],
-    ...params: AbstractParam[],
+    ...params: AbstractParam[]
   ) {
     const firstResult = func(first, ...params);
     const secondResult = func(second, ...params);
