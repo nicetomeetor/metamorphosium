@@ -41,30 +41,25 @@ export default class Comparator {
       const firstCollectorKeyResult = firstCollectorResult[key];
       const secondCollectorKeyResult = secondCollectorResult[key];
 
-      result[key]['p25'] = Comparator.abstractDiffByFunc(
-        quantile,
-        firstCollectorKeyResult,
-        secondCollectorKeyResult,
-        0.25
-      );
-      result[key]['p50'] = Comparator.abstractDiffByFunc(
-        quantile,
-        firstCollectorKeyResult,
-        secondCollectorKeyResult,
-        0.5
-      );
-      result[key]['p75'] = Comparator.abstractDiffByFunc(
-        quantile,
-        firstCollectorKeyResult,
-        secondCollectorKeyResult,
-        0.75
-      );
-      result[key]['p95'] = Comparator.abstractDiffByFunc(
-        quantile,
-        firstCollectorKeyResult,
-        secondCollectorKeyResult,
-        0.95
-      );
+      const percentiles = [
+        { name: 'p25', param: 0.25 },
+        { name: 'p50', param: 0.5 },
+        { name: 'p75', param: 0.75 },
+        { name: 'p95', param: 0.95 },
+      ];
+
+      for (let i = 0; i < percentiles.length; i++) {
+        const name = percentiles[i].name;
+        const param = percentiles[i].param;
+
+        result[key][name] = Comparator.abstractDiffByFunc(
+          quantile,
+          firstCollectorKeyResult,
+          secondCollectorKeyResult,
+          param
+        );
+      }
+
       result[key]['mean'] = Comparator.abstractDiffByFunc(
         mean,
         firstCollectorKeyResult,
