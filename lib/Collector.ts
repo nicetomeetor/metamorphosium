@@ -1,52 +1,28 @@
-import cliProgress, { SingleBar } from 'cli-progress';
-import { Cluster } from 'puppeteer-cluster';
-import { PuppeteerNodeLaunchOptions } from 'puppeteer';
 import tracium from 'tracium';
 
-import { TraceTasks, TraceTask } from './types';
+import cliProgress, { SingleBar } from 'cli-progress';
 
-import { EVENT_NAME, PAGE_WAIT_UNTIL } from './constants';
+import { Cluster } from 'puppeteer-cluster';
 
-export type Indications = string[];
+import {
+  TraceTasks,
+  TraceTask,
+  CollectorOptions,
+  Indications,
+  CollectorResult,
+  CollectorOutcome,
+} from './types';
 
-export type CollectorOptions = {
-  maxConcurrency: number;
-  retryLimit: number;
-  number: number;
-  timeout: number;
-  puppeteerOptions: PuppeteerNodeLaunchOptions;
-};
-
-type TraceEvent = {
-  name: string;
-  args?: {
-    data?: {
-      documentLoaderURL?: string;
-    };
-  };
-  ph: 'R' | 'X';
-  dur: number;
-  ts: number;
-};
-
-type CollectorOutcome = {
-  [key: string]: number;
-};
-
-export type CollectorResult = {
-  [key: string]: number[];
-};
+import { PAGE_WAIT_UNTIL } from './constants';
 
 export default class Collector {
   private readonly collectorOptions: CollectorOptions;
   private readonly indications: Indications;
   private readonly traceTasksSet: Set<TraceTask>;
   private readonly traceTasks: TraceTask[];
-  private metrics: CollectorResult;
+  private readonly metrics: CollectorResult;
 
   private progress: SingleBar;
-
-  private time: number = 1000000;
 
   constructor(
     collectorOptions: CollectorOptions,
@@ -57,7 +33,8 @@ export default class Collector {
     this.indications = indications;
     this.traceTasksSet = new Set(traceTasks);
     this.traceTasks = traceTasks;
-    this.metrics = {};
+
+    this.metrics = Collector.initializeMetrics(traceTasks);
 
     this.progress = new cliProgress.SingleBar(
       {
@@ -66,43 +43,17 @@ export default class Collector {
       },
       cliProgress.Presets.legacy
     );
-
-    this.initializeMetrics(traceTasks);
   }
 
-  private initializeMetrics(traceTasks: TraceTasks) {
-    this.metrics = {};
+  private static initializeMetrics(traceTasks: TraceTasks) {
+    const metrics: CollectorResult = {};
 
     for (let i = 0; i < traceTasks.length; i++) {
       const traceTask = traceTasks[i];
-      this.metrics[traceTask] = [];
-    }
-  }
-
-  private getTime(evt: number, ts: number): number {
-    return (evt - ts) / this.time;
-  }
-
-  private getDuration(dur: number): number {
-    return dur / this.time;
-  }
-
-  private getNavTime(url: string, traceEvents: TraceEvent[]): number {
-    let ts = 0;
-
-    for (let i = 0; i < traceEvents.length; i++) {
-      const traceEvent = traceEvents[i];
-
-      if (
-        traceEvent.name === EVENT_NAME.NAVIGATION_START &&
-        traceEvent?.args?.data?.documentLoaderURL?.includes(url)
-      ) {
-        ts = traceEvent.ts;
-        break;
-      }
+      metrics[traceTask] = [];
     }
 
-    return ts;
+    return metrics;
   }
 
   public async evaluate(url: string): Promise<CollectorResult> {
@@ -137,12 +88,12 @@ export default class Collector {
         flatten: true,
       });
 
-      const outcome2: CollectorOutcome = {};
+      const outcome: CollectorOutcome = {};
 
       for (let i = 0; i < this.traceTasks.length; i++) {
         const traceTask = this.traceTasks[i];
 
-        outcome2[traceTask] = 0;
+        outcome[traceTask] = 0;
       }
 
       for (let i = 0; i < tasks.length; i++) {
@@ -152,10 +103,10 @@ export default class Collector {
           continue;
         }
 
-        outcome2[kind] += selfTime;
+        outcome[kind] += selfTime;
       }
 
-      for (const [key, value] of Object.entries(outcome2)) {
+      for (const [key, value] of Object.entries(outcome)) {
         this.metrics[key].push(value);
       }
 

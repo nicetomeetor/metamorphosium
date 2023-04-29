@@ -1,17 +1,7 @@
 import wilcoxon from '@stdlib/stats-wilcoxon';
 import { mean, quantile } from 'simple-statistics';
 
-import { CollectorResult } from './Collector';
-
-type ComparatorOutCome = {
-  [key: string]: number | boolean;
-};
-
-type ComparatorResult = {
-  [key: string]: ComparatorOutCome;
-};
-
-type AbstractParam = any;
+import { CollectorResult, ComparatorResult, AbstractFnParam } from './types';
 
 export default class Comparator {
   private static testMW(first: number[], second: number[]) {
@@ -43,7 +33,7 @@ export default class Comparator {
     func: Function,
     first: number[],
     second: number[],
-    ...params: AbstractParam[]
+    ...params: AbstractFnParam[]
   ) {
     const firstResult = func(first, ...params);
     const secondResult = func(second, ...params);

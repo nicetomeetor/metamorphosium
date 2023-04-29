@@ -1,10 +1,10 @@
 import { writeFileSync } from 'node:fs';
 
-import Collector, { CollectorOptions, Indications } from './Collector';
 import Comparator from './Comparator';
+import Collector from './Collector';
 
+import { CollectorOptions, Indications, TraceTasks } from './types';
 import { FILE_NAME, INFO, TIME } from './constants';
-import { TraceTasks } from './types';
 
 export default class Processor {
   private readonly mainUrl: string;
