@@ -1,8 +1,11 @@
 import cliProgress, { SingleBar } from 'cli-progress';
 import { Cluster } from 'puppeteer-cluster';
 import { PuppeteerNodeLaunchOptions } from 'puppeteer';
+import tracium from 'tracium';
 
-import { EVENT_NAME } from './constants';
+import { TraceTasks, TraceTask } from './types';
+
+import { EVENT_NAME, PAGE_WAIT_UNTIL } from './constants';
 
 export type Indications = string[];
 
@@ -37,14 +40,24 @@ export type CollectorResult = {
 export default class Collector {
   private readonly collectorOptions: CollectorOptions;
   private readonly indications: Indications;
+  private readonly traceTasksSet: Set<TraceTask>;
+  private readonly traceTasks: TraceTask[];
+  private metrics: CollectorResult;
 
   private progress: SingleBar;
 
   private time: number = 1000000;
 
-  constructor(collectorOptions: CollectorOptions, indications: Indications) {
+  constructor(
+    collectorOptions: CollectorOptions,
+    indications: Indications,
+    traceTasks: TraceTasks
+  ) {
     this.collectorOptions = collectorOptions;
     this.indications = indications;
+    this.traceTasksSet = new Set(traceTasks);
+    this.traceTasks = traceTasks;
+    this.metrics = {};
 
     this.progress = new cliProgress.SingleBar(
       {
@@ -53,6 +66,17 @@ export default class Collector {
       },
       cliProgress.Presets.legacy
     );
+
+    this.initializeMetrics(traceTasks);
+  }
+
+  private initializeMetrics(traceTasks: TraceTasks) {
+    this.metrics = {};
+
+    for (let i = 0; i < traceTasks.length; i++) {
+      const traceTask = traceTasks[i];
+      this.metrics[traceTask] = [];
+    }
   }
 
   private getTime(evt: number, ts: number): number {
@@ -102,39 +126,37 @@ export default class Collector {
     await cluster.task(async ({ page, data }) => {
       await page.tracing.start();
 
-      await page.goto(url, { waitUntil: 'load' });
+      await page.goto(url, { waitUntil: PAGE_WAIT_UNTIL, timeout: 10000 });
 
       const bufferTrace = (await page.tracing.stop())!;
       const stringTrace = bufferTrace.toString();
 
       const parsedTrace = JSON.parse(stringTrace);
 
-      const traceEvents = parsedTrace.traceEvents;
+      const tasks = tracium.computeMainThreadTasks(parsedTrace, {
+        flatten: true,
+      });
 
-      let ts = this.getNavTime(url, traceEvents);
+      const outcome2: CollectorOutcome = {};
 
-      const outcome: CollectorOutcome = {};
+      for (let i = 0; i < this.traceTasks.length; i++) {
+        const traceTask = this.traceTasks[i];
 
-      for (let i = 0; i < this.indications.length; i++) {
-        outcome[this.indications[i]] = 0;
+        outcome2[traceTask] = 0;
       }
 
-      for (let i = 0; i < traceEvents.length; i++) {
-        const traceEvent = traceEvents[i];
+      for (let i = 0; i < tasks.length; i++) {
+        const { kind, selfTime } = tasks[i];
 
-        if (!this.indications.includes(traceEvent.name)) {
+        if (!this.traceTasksSet.has(kind)) {
           continue;
         }
 
-        if (traceEvent.ph === 'R') {
-          outcome[traceEvent.name] = this.getTime(traceEvent.ts, ts);
-        } else if (traceEvent.ph === 'X') {
-          outcome[traceEvent.name] += this.getDuration(traceEvent.dur);
-        }
+        outcome2[kind] += selfTime;
       }
 
-      for (const [key, value] of Object.entries(outcome)) {
-        metrics[key].push(value);
+      for (const [key, value] of Object.entries(outcome2)) {
+        this.metrics[key].push(value);
       }
 
       this.progress.increment();
@@ -144,11 +166,15 @@ export default class Collector {
       cluster.queue(i);
     }
 
+    cluster.on('taskerror', (err, data) => {
+      // console.log(`\nError crawling ${data}: ${err.message}`);
+    });
+
     await cluster.idle();
     await cluster.close();
 
     this.progress.stop();
 
-    return metrics;
+    return this.metrics;
   }
 }

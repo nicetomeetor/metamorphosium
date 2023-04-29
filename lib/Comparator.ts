@@ -14,6 +14,27 @@ type ComparatorResult = {
 type AbstractParam = any;
 
 export default class Comparator {
+  private static testMW(first: number[], second: number[]) {
+    const fn = (element: number) => element === 0;
+
+    const firsZeroStatus = first.every(fn);
+    const secondZeroStatus = second.every(fn);
+
+    if (firsZeroStatus && secondZeroStatus) {
+      return {
+        rejected: false,
+        pValue: 1,
+      };
+    }
+
+    const { rejected, pValue } = wilcoxon(first, second);
+
+    return {
+      rejected,
+      pValue,
+    };
+  }
+
   private static diff(a: number, b: number): number {
     return a - b;
   }
@@ -49,8 +70,8 @@ export default class Comparator {
       ];
 
       for (let i = 0; i < percentiles.length; i++) {
-        const name = percentiles[i].name;
-        const param = percentiles[i].param;
+        const percentile = percentiles[i];
+        const { name, param } = percentile;
 
         result[key][name] = Comparator.abstractDiffByFunc(
           quantile,
@@ -66,7 +87,7 @@ export default class Comparator {
         secondCollectorKeyResult
       );
 
-      const { rejected, pValue } = wilcoxon(
+      const { rejected, pValue } = Comparator.testMW(
         firstCollectorKeyResult,
         secondCollectorKeyResult
       );

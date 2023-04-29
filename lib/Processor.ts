@@ -4,23 +4,27 @@ import Collector, { CollectorOptions, Indications } from './Collector';
 import Comparator from './Comparator';
 
 import { FILE_NAME, INFO, TIME } from './constants';
+import { TraceTasks } from './types';
 
 export default class Processor {
   private readonly mainUrl: string;
   private readonly featureUrl: string;
   private readonly collectorOptions: CollectorOptions;
   private readonly indications: Indications;
+  private readonly traceTasks: TraceTasks;
 
   constructor(
     mainUrl: string,
     featureUrl: string,
     collectorOptions: CollectorOptions,
-    indications: Indications
+    indications: Indications,
+    traceTasks: TraceTasks
   ) {
     this.mainUrl = mainUrl;
     this.featureUrl = featureUrl;
     this.collectorOptions = collectorOptions;
     this.indications = indications;
+    this.traceTasks = traceTasks;
   }
 
   public async evaluate(): Promise<void> {
@@ -29,11 +33,13 @@ export default class Processor {
 
     const firstCollector = new Collector(
       this.collectorOptions,
-      this.indications
+      this.indications,
+      this.traceTasks
     );
     const secondCollector = new Collector(
       this.collectorOptions,
-      this.indications
+      this.indications,
+      this.traceTasks
     );
 
     console.info(INFO.FIRST_SELECTION);

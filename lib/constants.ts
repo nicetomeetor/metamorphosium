@@ -21,4 +21,6 @@ export const FILE_NAME = {
   RESULT: 'result.json',
   FIRST_SELECTION: 'first_selection.json',
   SECOND_SELECTION: 'second_selection.json',
-};
+} as const;
+
+export const PAGE_WAIT_UNTIL = 'networkidle2';
