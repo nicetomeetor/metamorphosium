@@ -15,7 +15,8 @@ import {
   Tasks,
 } from './types';
 
-import { PAGE, CLUSTER } from './constants';
+import { PAGE, CLUSTER, FILE_NAME } from './constants';
+import { Logger } from './Logger';
 
 export default class Collector {
   private readonly collectorOptions: CollectorOptions;
@@ -83,9 +84,7 @@ export default class Collector {
       await cluster.queue(this);
     }
 
-    cluster.on(CLUSTER.TASK_ERROR, (err, data) => {
-      console.log(`\nError crawling ${data}: ${err.message}`);
-    });
+    cluster.on(CLUSTER.TASK_ERROR, Collector.clusterTaskError);
 
     await cluster.idle();
     await cluster.close();
@@ -153,5 +152,9 @@ export default class Collector {
       const metric = this.metrics[key];
       metric[metric.length] = value;
     }
+  }
+
+  private static clusterTaskError(err: Error) {
+    Logger.print(err.message);
   }
 }
