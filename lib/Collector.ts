@@ -8,19 +8,17 @@ import {
   TraceTasks,
   TraceTask,
   CollectorOptions,
-  Indications,
   CollectorResult,
   CollectorOutcome,
   TaskFunction,
   Tasks,
 } from './types';
 
-import { PAGE, CLUSTER, FILE_NAME } from './constants';
+import { PAGE, CLUSTER } from './constants';
 import { Logger } from './Logger';
 
 export default class Collector {
   private readonly collectorOptions: CollectorOptions;
-  private readonly indications: Indications;
   private readonly traceTasksSet: Set<TraceTask>;
   private readonly traceTasks: TraceTask[];
   private readonly metrics: CollectorResult;
@@ -30,12 +28,10 @@ export default class Collector {
 
   constructor(
     collectorOptions: CollectorOptions,
-    indications: Indications,
     traceTasks: TraceTasks,
     url: string
   ) {
     this.collectorOptions = collectorOptions;
-    this.indications = indications;
     this.traceTasksSet = new Set(traceTasks);
     this.traceTasks = traceTasks;
     this.url = url;

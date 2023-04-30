@@ -3,27 +3,24 @@ import { writeFileSync } from 'node:fs';
 import Comparator from './Comparator';
 import Collector from './Collector';
 
-import { CollectorOptions, Indications, TraceTasks } from './types';
+import { CollectorOptions, TraceTasks } from './types';
 import { FILE_NAME, INFO, TIME } from './constants';
 
 export default class Processor {
   private readonly mainUrl: string;
   private readonly featureUrl: string;
   private readonly collectorOptions: CollectorOptions;
-  private readonly indications: Indications;
   private readonly traceTasks: TraceTasks;
 
   constructor(
     mainUrl: string,
     featureUrl: string,
     collectorOptions: CollectorOptions,
-    indications: Indications,
     traceTasks: TraceTasks
   ) {
     this.mainUrl = mainUrl;
     this.featureUrl = featureUrl;
     this.collectorOptions = collectorOptions;
-    this.indications = indications;
     this.traceTasks = traceTasks;
   }
 
@@ -33,13 +30,11 @@ export default class Processor {
 
     const firstCollector = new Collector(
       this.collectorOptions,
-      this.indications,
       this.traceTasks,
       this.mainUrl
     );
     const secondCollector = new Collector(
       this.collectorOptions,
-      this.indications,
       this.traceTasks,
       this.featureUrl
     );

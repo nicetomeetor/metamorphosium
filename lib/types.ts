@@ -11,8 +11,6 @@ export type TraceTask =
 
 export type TraceTasks = TraceTask[];
 
-export type Indications = string[];
-
 export type CollectorOptions = {
   maxConcurrency: number;
   retryLimit: number;
@@ -37,7 +35,7 @@ export type ComparatorResult = {
   [key: string]: ComparatorOutCome;
 };
 
-export type AbstractFnParam = any;
+export type AbstractFnParam = unknown;
 
 export type TaskFunction<JobData> = {
   page: Page;
