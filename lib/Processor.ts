@@ -34,16 +34,18 @@ export default class Processor {
     const firstCollector = new Collector(
       this.collectorOptions,
       this.indications,
-      this.traceTasks
+      this.traceTasks,
+      this.mainUrl
     );
     const secondCollector = new Collector(
       this.collectorOptions,
       this.indications,
-      this.traceTasks
+      this.traceTasks,
+      this.featureUrl
     );
 
     console.info(INFO.FIRST_SELECTION);
-    const firstSelection = await firstCollector.evaluate(this.mainUrl);
+    const firstSelection = await firstCollector.evaluate();
     const firstSelectionJsonString = JSON.stringify(firstSelection);
 
     console.time(TIME.WRITE_FIRST_SELECTION);
@@ -51,7 +53,7 @@ export default class Processor {
     console.timeEnd(TIME.WRITE_FIRST_SELECTION);
 
     console.info(INFO.SECOND_SELECTION);
-    const secondSelection = await secondCollector.evaluate(this.featureUrl);
+    const secondSelection = await secondCollector.evaluate();
     const secondSelectionJsonString = JSON.stringify(secondSelection);
 
     console.time(TIME.WRITE_SECOND_SELECTION);

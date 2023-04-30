@@ -1,4 +1,4 @@
-import { PuppeteerNodeLaunchOptions } from 'puppeteer';
+import { Page, PuppeteerNodeLaunchOptions } from 'puppeteer';
 
 export type TraceTask =
   | 'parseHTML'
@@ -38,3 +38,11 @@ export type ComparatorResult = {
 };
 
 export type AbstractFnParam = any;
+
+export type TaskFunction<JobData> = {
+  page: Page;
+  data: JobData;
+  worker: {
+    id: number;
+  };
+};

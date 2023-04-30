@@ -13,14 +13,17 @@ export const INFO = {
   PRINT_TABLE: 'Result',
 } as const;
 
-export const EVENT_NAME = {
-  NAVIGATION_START: 'navigationStart',
-} as const;
-
 export const FILE_NAME = {
   RESULT: 'result.json',
   FIRST_SELECTION: 'first_selection.json',
   SECOND_SELECTION: 'second_selection.json',
 } as const;
 
-export const PAGE_WAIT_UNTIL = 'networkidle2';
+export const PAGE = {
+  WAIT_UNTIL: 'networkidle2',
+  TIMEOUT: 10000,
+} as const;
+
+export const CLUSTER = {
+  TASK_ERROR: 'taskerror',
+} as const;
