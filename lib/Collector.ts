@@ -12,6 +12,7 @@ import {
   CollectorResult,
   CollectorOutcome,
   TaskFunction,
+  Tasks,
 } from './types';
 
 import { PAGE, CLUSTER } from './constants';
@@ -22,7 +23,7 @@ export default class Collector {
   private readonly traceTasksSet: Set<TraceTask>;
   private readonly traceTasks: TraceTask[];
   private readonly metrics: CollectorResult;
-  private readonly url: string;
+  private url: string;
 
   private progress: SingleBar;
 
@@ -49,6 +50,10 @@ export default class Collector {
     );
   }
 
+  public setUrl(url: string) {
+    this.url = url;
+  }
+
   private static initializeMetrics(traceTasks: TraceTasks) {
     const metrics: CollectorResult = {};
 
@@ -63,22 +68,16 @@ export default class Collector {
   public async evaluate(): Promise<CollectorResult> {
     const cluster = await Cluster.launch({
       concurrency: Cluster.CONCURRENCY_BROWSER,
-      maxConcurrency: this.collectorOptions.maxConcurrency,
-      retryLimit: this.collectorOptions.retryLimit,
-      timeout: this.collectorOptions.timeout,
+      maxConcurrency:
+        this.collectorOptions.maxConcurrency || CLUSTER.MAX_CONCURRENCY,
+      retryLimit: this.collectorOptions.retryLimit || CLUSTER.RETRY_LIMIT,
+      timeout: this.collectorOptions.timeout || CLUSTER.TIMEOUT,
       puppeteerOptions: this.collectorOptions.puppeteerOptions,
     });
 
-    const metrics: CollectorResult = {};
-
-    for (let i = 0; i < this.indications.length; i++) {
-      const indication = this.indications[i];
-      metrics[indication] = [];
-    }
-
     this.progress.start(this.collectorOptions.number, 0);
 
-    await cluster.task(this.clusterTask);
+    await cluster.task(Collector.clusterTask);
 
     for (let i = 0; i < this.collectorOptions.number; i++) {
       await cluster.queue(this);
@@ -96,7 +95,7 @@ export default class Collector {
     return this.metrics;
   }
 
-  private async clusterTask({ page, data }: TaskFunction<any>) {
+  private static async clusterTask({ page, data }: TaskFunction<Collector>) {
     await page.tracing.start();
 
     await page.goto(data.url, {
@@ -112,28 +111,47 @@ export default class Collector {
       flatten: true,
     });
 
+    const outcome: CollectorOutcome = data.createOutcome();
+
+    const update = data.updateOutcomeByTasks(tasks, outcome);
+
+    data.updateResult(update);
+    data.progress.increment();
+  }
+
+  private createOutcome(): CollectorOutcome {
     const outcome: CollectorOutcome = {};
 
-    for (let i = 0; i < data.traceTasks.length; i++) {
-      const traceTask = data.traceTasks[i];
+    for (let i = 0; i < this.traceTasks.length; i++) {
+      const traceTask = this.traceTasks[i];
 
       outcome[traceTask] = 0;
     }
 
+    return outcome;
+  }
+
+  private updateOutcomeByTasks(
+    tasks: Tasks,
+    outcome: CollectorOutcome
+  ): CollectorOutcome {
     for (let i = 0; i < tasks.length; i++) {
       const { kind, selfTime } = tasks[i];
 
-      if (!data.traceTasksSet.has(kind)) {
+      if (!this.traceTasksSet.has(kind)) {
         continue;
       }
 
       outcome[kind] += selfTime;
     }
 
-    for (const [key, value] of Object.entries(outcome)) {
-      data.metrics[key].push(value);
-    }
+    return outcome;
+  }
 
-    data.progress.increment();
+  private updateResult(update: CollectorOutcome) {
+    for (const [key, value] of Object.entries(update)) {
+      const metric = this.metrics[key];
+      metric[metric.length] = value;
+    }
   }
 }

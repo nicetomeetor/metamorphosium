@@ -26,4 +26,13 @@ export const PAGE = {
 
 export const CLUSTER = {
   TASK_ERROR: 'taskerror',
+  MAX_CONCURRENCY: 1,
+  RETRY_LIMIT: 10,
+  TIMEOUT: 10000,
 } as const;
+
+export const COMPARE = {
+  MEAN: 'Mean',
+  MW: 'MW',
+  P_VALUE: 'P-value',
+};

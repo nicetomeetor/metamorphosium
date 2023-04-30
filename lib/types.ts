@@ -46,3 +46,13 @@ export type TaskFunction<JobData> = {
     id: number;
   };
 };
+
+export type Task = {
+  kind: TraceTask;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  selfTime: number;
+};
+
+export type Tasks = Task[];

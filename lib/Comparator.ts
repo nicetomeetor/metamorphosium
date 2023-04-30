@@ -2,6 +2,7 @@ import wilcoxon from '@stdlib/stats-wilcoxon';
 import { mean, quantile } from 'simple-statistics';
 
 import { CollectorResult, ComparatorResult, AbstractFnParam } from './types';
+import { COMPARE } from './constants';
 
 export default class Comparator {
   private static testMW(first: number[], second: number[]) {
@@ -71,7 +72,7 @@ export default class Comparator {
         );
       }
 
-      result[key]['mean'] = Comparator.abstractDiffByFunc(
+      result[key][COMPARE.MEAN] = Comparator.abstractDiffByFunc(
         mean,
         firstCollectorKeyResult,
         secondCollectorKeyResult
@@ -82,8 +83,8 @@ export default class Comparator {
         secondCollectorKeyResult
       );
 
-      result[key]['mw status'] = rejected;
-      result[key]['mw p-value'] = pValue;
+      result[key][COMPARE.MW] = rejected;
+      result[key][COMPARE.P_VALUE] = pValue;
     }
 
     return result;
