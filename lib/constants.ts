@@ -1,8 +1,8 @@
 export const TIME = {
   EXECUTION: 'Execution time',
-  WRITE_RESULT: 'Write file time',
-  WRITE_FIRST_SELECTION: 'Write first selection time',
-  WRITE_SECOND_SELECTION: 'Write second selection time',
+  WRITE_RESULT: 'Write result file time',
+  WRITE_FIRST_SELECTION: 'Write first selection file time',
+  WRITE_SECOND_SELECTION: 'Write second selection file time',
 } as const;
 
 export const INFO = {
@@ -36,4 +36,12 @@ export const COMPARE = {
   MEAN: 'Mean',
   MW: 'MW',
   P_VALUE: 'P-value',
-};
+  COUNT: 'Count',
+} as const;
+
+export const PERCENTILES = {
+  P95: '95th percentile',
+  P50: '50th percentile',
+  P75: '75th percentile',
+  P25: '25th percentile',
+} as const;

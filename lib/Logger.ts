@@ -1,7 +1,8 @@
 import fs from 'node:fs';
+
 import { FILE_NAME } from './constants';
 
-export class Logger {
+export default class Logger {
   static print(message: string) {
     const date = new Date();
     const processed = `[${date.toISOString()}] ${message}\n`;

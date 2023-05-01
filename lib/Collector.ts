@@ -4,6 +4,8 @@ import cliProgress, { SingleBar } from 'cli-progress';
 
 import { Cluster } from 'puppeteer-cluster';
 
+import Logger from './Logger';
+
 import {
   TraceTasks,
   TraceTask,
@@ -15,14 +17,12 @@ import {
 } from './types';
 
 import { PAGE, CLUSTER } from './constants';
-import { Logger } from './Logger';
-
 export default class Collector {
   private readonly collectorOptions: CollectorOptions;
   private readonly traceTasksSet: Set<TraceTask>;
   private readonly traceTasks: TraceTask[];
   private readonly metrics: CollectorResult;
-  private url: string;
+  private readonly url: string;
 
   private progress: SingleBar;
 
@@ -45,10 +45,6 @@ export default class Collector {
       },
       cliProgress.Presets.legacy
     );
-  }
-
-  public setUrl(url: string) {
-    this.url = url;
   }
 
   private static initializeMetrics(traceTasks: TraceTasks) {

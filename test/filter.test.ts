@@ -1,12 +1,6 @@
 import Filter from '../lib/Filter';
 
-import { CollectorResult } from '../lib/types';
-
-const createCollectorResult = (arr: number[]): CollectorResult => {
-  return {
-    parseHTML: arr,
-  };
-};
+import { createCollectorResult } from './utils';
 
 test('', () => {
   const firstCollectorResult = createCollectorResult([1, 2, 3, 4, 5, 100]);

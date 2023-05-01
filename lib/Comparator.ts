@@ -1,70 +1,119 @@
 import wilcoxon from '@stdlib/stats-wilcoxon';
+
 import { mean, quantile } from 'simple-statistics';
 
-import { CollectorResult, ComparatorResult, AbstractFnParam } from './types';
-import { COMPARE } from './constants';
+import {
+  AbstractFnParams,
+  CollectorResult,
+  ComparatorResult,
+  Selection,
+} from './types';
+import { COMPARE, PERCENTILES } from './constants';
 
 export default class Comparator {
-  private static testMW(first: number[], second: number[]) {
-    const fn = (element: number) => element === 0;
-
-    const firsZeroStatus = first.every(fn);
-    const secondZeroStatus = second.every(fn);
-
-    if (firsZeroStatus && secondZeroStatus) {
-      return {
-        rejected: false,
-        pValue: 1,
-      };
-    }
-
-    const { rejected, pValue } = wilcoxon(first, second);
-
-    return {
-      rejected,
-      pValue,
-    };
+  private static isSameLength(
+    firstSelection: Selection,
+    secondSelection: Selection
+  ): boolean {
+    return firstSelection.length === secondSelection.length;
   }
 
-  private static diff(a: number, b: number): number {
+  private static isEveryElementEqual(
+    firstSelection: Selection,
+    secondSelection: Selection
+  ): boolean {
+    for (let i = 0; i < firstSelection.length; i++) {
+      if (firstSelection[i] !== secondSelection[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+  private static isEqualSelections(
+    firstSelection: Selection,
+    secondSelection: Selection
+  ) {
+    return (
+      Comparator.isSameLength(firstSelection, secondSelection) &&
+      Comparator.isEveryElementEqual(firstSelection, secondSelection)
+    );
+  }
+
+  private static isElementZero(element: number): boolean {
+    return element === 0;
+  }
+
+  private static isEveryElementZero(selection: Selection): boolean {
+    return selection.every(Comparator.isElementZero);
+  }
+
+  private static testMannWhitney(
+    firstSelection: Selection,
+    secondSelection: Selection
+  ): [boolean, number] {
+    const isFirstSelectionEveryElementZero =
+      Comparator.isEveryElementZero(firstSelection);
+    const isSecondSelectionEveryElementZero =
+      Comparator.isEveryElementZero(secondSelection);
+
+    const isEveryElementZero =
+      isFirstSelectionEveryElementZero && isSecondSelectionEveryElementZero;
+
+    const isEqualSelections = Comparator.isEqualSelections(
+      firstSelection,
+      secondSelection
+    );
+
+    if (isEveryElementZero || isEqualSelections) {
+      return [false, 1];
+    }
+
+    const { rejected, pValue } = wilcoxon(firstSelection, secondSelection);
+
+    return [rejected, pValue];
+  }
+
+  private static subtract(a: number, b: number): number {
     return a - b;
   }
 
-  private static abstractDiffByFunc(
-    func: Function,
-    first: number[],
-    second: number[],
-    ...params: AbstractFnParam[]
-  ) {
-    const firstResult = func(first, ...params);
-    const secondResult = func(second, ...params);
+  private static subtractByFn(
+    fn: Function,
+    firstSelection: Selection,
+    secondSelection: Selection,
+    ...abstractFnParams: AbstractFnParams
+  ): number {
+    const firstResult = fn(firstSelection, ...abstractFnParams);
+    const secondResult = fn(secondSelection, ...abstractFnParams);
 
-    return Comparator.diff(firstResult, secondResult);
+    return Comparator.subtract(firstResult, secondResult);
   }
+
   public static compare(
     firstCollectorResult: CollectorResult,
     secondCollectorResult: CollectorResult
   ): ComparatorResult {
-    const result: ComparatorResult = {};
+    const comparatorResult: ComparatorResult = {};
 
     for (const key of Object.keys(firstCollectorResult)) {
-      result[key] = {};
+      comparatorResult[key] = {};
 
       const firstCollectorKeyResult = firstCollectorResult[key];
       const secondCollectorKeyResult = secondCollectorResult[key];
 
       const percentiles = [
-        { name: 'p25', param: 0.25 },
-        { name: 'p50', param: 0.5 },
-        { name: 'p75', param: 0.75 },
-        { name: 'p95', param: 0.95 },
+        { name: PERCENTILES.P95, param: 0.25 },
+        { name: PERCENTILES.P50, param: 0.5 },
+        { name: PERCENTILES.P75, param: 0.75 },
+        { name: PERCENTILES.P95, param: 0.95 },
       ];
 
       for (let i = 0; i < percentiles.length; i++) {
         const percentile = percentiles[i];
         const { name, param } = percentile;
 
-        result[key][name] = Comparator.abstractDiffByFunc(
+        comparatorResult[key][name] = Comparator.subtractByFn(
           quantile,
           firstCollectorKeyResult,
           secondCollectorKeyResult,
@@ -72,21 +121,23 @@ export default class Comparator {
         );
       }
 
-      result[key][COMPARE.MEAN] = Comparator.abstractDiffByFunc(
+      comparatorResult[key][COMPARE.MEAN] = Comparator.subtractByFn(
         mean,
         firstCollectorKeyResult,
         secondCollectorKeyResult
       );
 
-      const { rejected, pValue } = Comparator.testMW(
+      const [rejected, pValue] = Comparator.testMannWhitney(
         firstCollectorKeyResult,
         secondCollectorKeyResult
       );
 
-      result[key][COMPARE.MW] = rejected;
-      result[key][COMPARE.P_VALUE] = pValue;
+      comparatorResult[key][COMPARE.MW] = rejected;
+      comparatorResult[key][COMPARE.P_VALUE] = pValue;
+
+      comparatorResult[key][COMPARE.COUNT] = firstCollectorKeyResult.length;
     }
 
-    return result;
+    return comparatorResult;
   }
 }

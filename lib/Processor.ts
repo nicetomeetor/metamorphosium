@@ -2,6 +2,7 @@ import { writeFileSync } from 'node:fs';
 
 import Comparator from './Comparator';
 import Collector from './Collector';
+import Filter from './Filter';
 
 import { CollectorOptions, TraceTasks } from './types';
 import { FILE_NAME, INFO, TIME } from './constants';
@@ -55,7 +56,15 @@ export default class Processor {
     writeFileSync(FILE_NAME.SECOND_SELECTION, secondSelectionJsonString);
     console.timeEnd(TIME.WRITE_SECOND_SELECTION);
 
-    const comparison = Comparator.compare(firstSelection, secondSelection);
+    const [firstFilteredSelection, secondFirstSelection] = Filter.process(
+      firstSelection,
+      secondSelection
+    );
+
+    const comparison = Comparator.compare(
+      firstFilteredSelection,
+      secondFirstSelection
+    );
 
     console.info(INFO.PRINT_TABLE);
     console.table(comparison);

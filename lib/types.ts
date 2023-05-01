@@ -37,6 +37,8 @@ export type ComparatorResult = {
 
 export type AbstractFnParam = unknown;
 
+export type AbstractFnParams = AbstractFnParam[];
+
 export type TaskFunction<JobData> = {
   page: Page;
   data: JobData;
@@ -54,3 +56,5 @@ export type Task = {
 };
 
 export type Tasks = Task[];
+
+export type Selection = number[];
