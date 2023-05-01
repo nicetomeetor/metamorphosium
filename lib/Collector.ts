@@ -21,8 +21,9 @@ export default class Collector {
   private readonly collectorOptions: CollectorOptions;
   private readonly traceTasksSet: Set<TraceTask>;
   private readonly traceTasks: TraceTask[];
-  private readonly metrics: CollectorResult;
-  private readonly url: string;
+  private url: string;
+
+  private metrics: CollectorResult;
 
   private progress: SingleBar;
 
@@ -35,8 +36,7 @@ export default class Collector {
     this.traceTasksSet = new Set(traceTasks);
     this.traceTasks = traceTasks;
     this.url = url;
-
-    this.metrics = Collector.initializeMetrics(traceTasks);
+    this.metrics = {};
 
     this.progress = new cliProgress.SingleBar(
       {
@@ -45,6 +45,10 @@ export default class Collector {
       },
       cliProgress.Presets.legacy
     );
+  }
+
+  public setUrl(url: string): void {
+    this.url = url;
   }
 
   private static initializeMetrics(traceTasks: TraceTasks) {
@@ -59,6 +63,8 @@ export default class Collector {
   }
 
   public async evaluate(): Promise<CollectorResult> {
+    this.metrics = Collector.initializeMetrics(this.traceTasks);
+
     const cluster = await Cluster.launch({
       concurrency: Cluster.CONCURRENCY_BROWSER,
       maxConcurrency:

@@ -29,27 +29,24 @@ export default class Processor {
     console.info(INFO.START);
     console.time(TIME.EXECUTION);
 
-    const firstCollector = new Collector(
+    const collector = new Collector(
       this.collectorOptions,
       this.traceTasks,
       this.mainUrl
     );
-    const secondCollector = new Collector(
-      this.collectorOptions,
-      this.traceTasks,
-      this.featureUrl
-    );
 
     console.info(INFO.FIRST_SELECTION);
-    const firstSelection = await firstCollector.evaluate();
+    const firstSelection = await collector.evaluate();
     const firstSelectionJsonString = JSON.stringify(firstSelection);
 
     console.time(TIME.WRITE_FIRST_SELECTION);
     writeFileSync(FILE_NAME.FIRST_SELECTION, firstSelectionJsonString);
     console.timeEnd(TIME.WRITE_FIRST_SELECTION);
 
+    collector.setUrl(this.featureUrl);
+
     console.info(INFO.SECOND_SELECTION);
-    const secondSelection = await secondCollector.evaluate();
+    const secondSelection = await collector.evaluate();
     const secondSelectionJsonString = JSON.stringify(secondSelection);
 
     console.time(TIME.WRITE_SECOND_SELECTION);
