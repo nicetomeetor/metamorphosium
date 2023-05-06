@@ -1,6 +1,6 @@
 import { quantile } from 'simple-statistics';
 
-import { CollectorResult, Selection } from './types';
+import { CollectorResult, Sample } from './types';
 
 export default class Filter {
   public static process(
@@ -24,30 +24,30 @@ export default class Filter {
   }
 
   public static match(
-    firstSelection: Selection,
-    secondSelection: Selection
-  ): [Selection, Selection] {
+    firstSample: Sample,
+    secondSample: Sample
+  ): [Sample, Sample] {
     const first = [];
     const second = [];
 
-    const minLength = Math.min(firstSelection.length, secondSelection.length);
+    const minLength = Math.min(firstSample.length, secondSample.length);
 
     let j = 0;
 
     for (let i = 0; i < minLength; i++) {
-      if (isNaN(firstSelection[i]) || isNaN(secondSelection[i])) {
+      if (isNaN(firstSample[i]) || isNaN(secondSample[i])) {
         j++;
         continue;
       }
 
-      first[i - j] = firstSelection[i];
-      second[i - j] = secondSelection[i];
+      first[i - j] = firstSample[i];
+      second[i - j] = secondSample[i];
     }
 
     return [first, second];
   }
 
-  private static execute(array: Selection): Selection {
+  private static execute(array: Sample): Sample {
     const q1 = quantile(array, 0.25);
     const q3 = quantile(array, 0.75);
 

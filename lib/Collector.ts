@@ -17,14 +17,14 @@ import {
 } from './types';
 
 import { PAGE, CLUSTER } from './constants';
+
 export default class Collector {
   private readonly collectorOptions: CollectorOptions;
   private readonly traceTasksSet: Set<TraceTask>;
   private readonly traceTasks: TraceTask[];
+
   private url: string;
-
-  private metrics: CollectorResult;
-
+  private result: CollectorResult;
   private progress: SingleBar;
 
   constructor(
@@ -36,7 +36,7 @@ export default class Collector {
     this.traceTasksSet = new Set(traceTasks);
     this.traceTasks = traceTasks;
     this.url = url;
-    this.metrics = {};
+    this.result = {};
 
     this.progress = new cliProgress.SingleBar(
       {
@@ -51,19 +51,19 @@ export default class Collector {
     this.url = url;
   }
 
-  private static initializeMetrics(traceTasks: TraceTasks) {
-    const metrics: CollectorResult = {};
+  private static initialize(traceTasks: TraceTasks): CollectorResult {
+    const result: CollectorResult = {};
 
     for (let i = 0; i < traceTasks.length; i++) {
       const traceTask = traceTasks[i];
-      metrics[traceTask] = [];
+      result[traceTask] = [];
     }
 
-    return metrics;
+    return result;
   }
 
   public async evaluate(): Promise<CollectorResult> {
-    this.metrics = Collector.initializeMetrics(this.traceTasks);
+    this.result = Collector.initialize(this.traceTasks);
 
     const cluster = await Cluster.launch({
       concurrency: Cluster.CONCURRENCY_BROWSER,
@@ -89,13 +89,16 @@ export default class Collector {
 
     this.progress.stop();
 
-    return this.metrics;
+    return this.result;
   }
 
-  private static async clusterTask({ page, data }: TaskFunction<Collector>) {
+  private static async clusterTask({
+    page,
+    data: collector,
+  }: TaskFunction<Collector>): Promise<void> {
     await page.tracing.start();
 
-    await page.goto(data.url, {
+    await page.goto(collector.url, {
       waitUntil: PAGE.WAIT_UNTIL,
       timeout: PAGE.TIMEOUT,
     });
@@ -108,12 +111,11 @@ export default class Collector {
       flatten: true,
     });
 
-    const outcome: CollectorOutcome = data.createOutcome();
+    const outcome: CollectorOutcome = collector.createOutcome();
+    const updatedOutcome = collector.updateOutcomeByTasks(tasks, outcome);
 
-    const update = data.updateOutcomeByTasks(tasks, outcome);
-
-    data.updateResult(update);
-    data.progress.increment();
+    collector.updateResult(updatedOutcome);
+    collector.progress.increment();
   }
 
   private createOutcome(): CollectorOutcome {
@@ -121,7 +123,6 @@ export default class Collector {
 
     for (let i = 0; i < this.traceTasks.length; i++) {
       const traceTask = this.traceTasks[i];
-
       outcome[traceTask] = 0;
     }
 
@@ -133,26 +134,30 @@ export default class Collector {
     outcome: CollectorOutcome
   ): CollectorOutcome {
     for (let i = 0; i < tasks.length; i++) {
-      const { kind, selfTime } = tasks[i];
+      const { kind, selfTime, startTime } = tasks[i];
 
       if (!this.traceTasksSet.has(kind)) {
         continue;
       }
 
-      outcome[kind] += selfTime;
+      if (outcome[kind] === 0) {
+        outcome[kind] = startTime + selfTime;
+      } else {
+        outcome[kind] += selfTime;
+      }
     }
 
     return outcome;
   }
 
-  private updateResult(update: CollectorOutcome) {
-    for (const [key, value] of Object.entries(update)) {
-      const metric = this.metrics[key];
+  private updateResult(collectorOutcome: CollectorOutcome): void {
+    for (const [key, value] of Object.entries(collectorOutcome)) {
+      const metric = this.result[key];
       metric[metric.length] = value;
     }
   }
 
-  private static clusterTaskError(err: Error) {
+  private static clusterTaskError(err: Error): void {
     Logger.print(err.message);
   }
 }

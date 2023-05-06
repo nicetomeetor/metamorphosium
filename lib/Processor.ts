@@ -58,7 +58,9 @@ export default class Processor {
       secondSelection
     );
 
-    const comparison = Comparator.compare(
+    const comparator = new Comparator();
+
+    const comparison = comparator.compare(
       firstFilteredSelection,
       secondFirstSelection
     );

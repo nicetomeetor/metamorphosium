@@ -53,8 +53,11 @@ export type Task = {
   endTime: number;
   duration: number;
   selfTime: number;
+  event: {
+    name: string;
+  };
 };
 
 export type Tasks = Task[];
 
-export type Selection = number[];
+export type Sample = number[];

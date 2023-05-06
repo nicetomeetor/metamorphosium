@@ -6,7 +6,9 @@ test('', () => {
   const firstCollectionResult = createCollectorResult([1, 2, 3, 4, 5]);
   const secondCollectionResult = createCollectorResult([1, 2, 3, 4, 5]);
 
-  const result = Comparator.compare(
+  const comparator = new Comparator();
+
+  const result = comparator.compare(
     firstCollectionResult,
     secondCollectionResult
   );

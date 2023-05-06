@@ -6,37 +6,40 @@ import {
   AbstractFnParams,
   CollectorResult,
   ComparatorResult,
-  Selection,
+  Sample,
 } from './types';
 import { COMPARE, PERCENTILES } from './constants';
 
 export default class Comparator {
+  private result: ComparatorResult;
+
+  constructor() {
+    this.result = {};
+  }
+
   private static isSameLength(
-    firstSelection: Selection,
-    secondSelection: Selection
+    firstSample: Sample,
+    secondSample: Sample
   ): boolean {
-    return firstSelection.length === secondSelection.length;
+    return firstSample.length === secondSample.length;
   }
 
   private static isEveryElementEqual(
-    firstSelection: Selection,
-    secondSelection: Selection
+    firstSample: Sample,
+    secondSample: Sample
   ): boolean {
-    for (let i = 0; i < firstSelection.length; i++) {
-      if (firstSelection[i] !== secondSelection[i]) {
+    for (let i = 0; i < firstSample.length; i++) {
+      if (firstSample[i] !== secondSample[i]) {
         return false;
       }
     }
 
     return true;
   }
-  private static isEqualSelections(
-    firstSelection: Selection,
-    secondSelection: Selection
-  ) {
+  private static isEqualSamples(firstSample: Sample, secondSample: Sample) {
     return (
-      Comparator.isSameLength(firstSelection, secondSelection) &&
-      Comparator.isEveryElementEqual(firstSelection, secondSelection)
+      Comparator.isSameLength(firstSample, secondSample) &&
+      Comparator.isEveryElementEqual(firstSample, secondSample)
     );
   }
 
@@ -44,32 +47,29 @@ export default class Comparator {
     return element === 0;
   }
 
-  private static isEveryElementZero(selection: Selection): boolean {
-    return selection.every(Comparator.isElementZero);
+  private static isEveryElementZero(sample: Sample): boolean {
+    return sample.every(Comparator.isElementZero);
   }
 
   private static testMannWhitney(
-    firstSelection: Selection,
-    secondSelection: Selection
+    firstSample: Sample,
+    secondSample: Sample
   ): [boolean, number] {
     const isFirstSelectionEveryElementZero =
-      Comparator.isEveryElementZero(firstSelection);
+      Comparator.isEveryElementZero(firstSample);
     const isSecondSelectionEveryElementZero =
-      Comparator.isEveryElementZero(secondSelection);
+      Comparator.isEveryElementZero(secondSample);
 
     const isEveryElementZero =
       isFirstSelectionEveryElementZero && isSecondSelectionEveryElementZero;
 
-    const isEqualSelections = Comparator.isEqualSelections(
-      firstSelection,
-      secondSelection
-    );
+    const isEqualSamples = Comparator.isEqualSamples(firstSample, secondSample);
 
-    if (isEveryElementZero || isEqualSelections) {
+    if (isEveryElementZero || isEqualSamples) {
       return [false, 1];
     }
 
-    const { rejected, pValue } = wilcoxon(firstSelection, secondSelection);
+    const { rejected, pValue } = wilcoxon(firstSample, secondSample);
 
     return [rejected, pValue];
   }
@@ -80,64 +80,88 @@ export default class Comparator {
 
   private static subtractByFn(
     fn: Function,
-    firstSelection: Selection,
-    secondSelection: Selection,
+    firstSample: Sample,
+    secondSample: Sample,
     ...abstractFnParams: AbstractFnParams
   ): number {
-    const firstResult = fn(firstSelection, ...abstractFnParams);
-    const secondResult = fn(secondSelection, ...abstractFnParams);
+    const firstResult = fn(firstSample, ...abstractFnParams);
+    const secondResult = fn(secondSample, ...abstractFnParams);
 
     return Comparator.subtract(firstResult, secondResult);
   }
 
-  public static compare(
+  private addPercentiles(
+    firstSample: Sample,
+    secondSample: Sample,
+    traceTask: string
+  ): void {
+    const percentiles = [
+      { name: PERCENTILES.P95, param: 0.25 },
+      { name: PERCENTILES.P50, param: 0.5 },
+      { name: PERCENTILES.P75, param: 0.75 },
+      { name: PERCENTILES.P95, param: 0.95 },
+    ];
+
+    for (let i = 0; i < percentiles.length; i++) {
+      const percentile = percentiles[i];
+      const { name, param } = percentile;
+
+      this.result[traceTask][name] = Comparator.subtractByFn(
+        quantile,
+        firstSample,
+        secondSample,
+        param
+      );
+    }
+  }
+
+  private addMean(
+    firstSample: Sample,
+    secondSample: Sample,
+    traceTask: string
+  ): void {
+    this.result[traceTask][COMPARE.MEAN] = Comparator.subtractByFn(
+      mean,
+      firstSample,
+      secondSample
+    );
+  }
+
+  private addMannWhitney(
+    firstSample: Sample,
+    secondSample: Sample,
+    traceTask: string
+  ): void {
+    const [rejected, pValue] = Comparator.testMannWhitney(
+      firstSample,
+      secondSample
+    );
+
+    this.result[traceTask][COMPARE.MW] = rejected;
+    this.result[traceTask][COMPARE.P_VALUE] = pValue;
+  }
+
+  private addCount(traceTask: string, count: number): void {
+    this.result[traceTask][COMPARE.COUNT] = count;
+  }
+
+  public compare(
     firstCollectorResult: CollectorResult,
     secondCollectorResult: CollectorResult
   ): ComparatorResult {
-    const comparatorResult: ComparatorResult = {};
+    for (const traceTask of Object.keys(firstCollectorResult)) {
+      this.result[traceTask] = {};
 
-    for (const key of Object.keys(firstCollectorResult)) {
-      comparatorResult[key] = {};
+      const firstSample = firstCollectorResult[traceTask];
+      const secondSample = secondCollectorResult[traceTask];
 
-      const firstCollectorKeyResult = firstCollectorResult[key];
-      const secondCollectorKeyResult = secondCollectorResult[key];
+      this.addPercentiles(firstSample, secondSample, traceTask);
+      this.addMean(firstSample, secondSample, traceTask);
+      this.addMannWhitney(firstSample, secondSample, traceTask);
 
-      const percentiles = [
-        { name: PERCENTILES.P95, param: 0.25 },
-        { name: PERCENTILES.P50, param: 0.5 },
-        { name: PERCENTILES.P75, param: 0.75 },
-        { name: PERCENTILES.P95, param: 0.95 },
-      ];
-
-      for (let i = 0; i < percentiles.length; i++) {
-        const percentile = percentiles[i];
-        const { name, param } = percentile;
-
-        comparatorResult[key][name] = Comparator.subtractByFn(
-          quantile,
-          firstCollectorKeyResult,
-          secondCollectorKeyResult,
-          param
-        );
-      }
-
-      comparatorResult[key][COMPARE.MEAN] = Comparator.subtractByFn(
-        mean,
-        firstCollectorKeyResult,
-        secondCollectorKeyResult
-      );
-
-      const [rejected, pValue] = Comparator.testMannWhitney(
-        firstCollectorKeyResult,
-        secondCollectorKeyResult
-      );
-
-      comparatorResult[key][COMPARE.MW] = rejected;
-      comparatorResult[key][COMPARE.P_VALUE] = pValue;
-
-      comparatorResult[key][COMPARE.COUNT] = firstCollectorKeyResult.length;
+      this.addCount(traceTask, firstSample.length);
     }
 
-    return comparatorResult;
+    return this.result;
   }
 }
