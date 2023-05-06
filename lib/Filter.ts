@@ -3,21 +3,30 @@ import { quantile } from 'simple-statistics';
 import { CollectorResult, Sample } from './types';
 
 export default class Filter {
-  public static process(
+  private readonly coefficient: number;
+
+  constructor(coefficient: number) {
+    this.coefficient = coefficient;
+  }
+
+  public evaluate(
     firstResult: CollectorResult,
     secondResult: CollectorResult
   ): [CollectorResult, CollectorResult] {
     for (const task of Object.keys(firstResult)) {
-      const firstFilteredSelection = Filter.execute(firstResult[task]);
-      const secondFilteredSelection = Filter.execute(secondResult[task]);
+      const firstSample = firstResult[task];
+      const secondSample = secondResult[task];
 
-      const [first, second] = Filter.match(
-        firstFilteredSelection,
-        secondFilteredSelection
+      const firstFilteredSample = this.execute(firstSample);
+      const secondFilteredSample = this.execute(secondSample);
+
+      const [firstMatchedSample, secondMatchedSample] = Filter.match(
+        firstFilteredSample,
+        secondFilteredSample
       );
 
-      firstResult[task] = first;
-      secondResult[task] = second;
+      firstResult[task] = firstMatchedSample;
+      secondResult[task] = secondMatchedSample;
     }
 
     return [firstResult, secondResult];
@@ -27,8 +36,8 @@ export default class Filter {
     firstSample: Sample,
     secondSample: Sample
   ): [Sample, Sample] {
-    const first = [];
-    const second = [];
+    const firstMatchedSample = [];
+    const secondMatchedSample = [];
 
     const minLength = Math.min(firstSample.length, secondSample.length);
 
@@ -40,29 +49,27 @@ export default class Filter {
         continue;
       }
 
-      first[i - j] = firstSample[i];
-      second[i - j] = secondSample[i];
+      firstMatchedSample[i - j] = firstSample[i];
+      secondMatchedSample[i - j] = secondSample[i];
     }
 
-    return [first, second];
+    return [firstMatchedSample, secondMatchedSample];
   }
 
-  private static execute(array: Sample): Sample {
-    const q1 = quantile(array, 0.25);
-    const q3 = quantile(array, 0.75);
+  private execute(sample: Sample): Sample {
+    const q1 = quantile(sample, 0.25);
+    const q3 = quantile(sample, 0.75);
 
     const iqr = q3 - q1;
 
-    const coef = 1.5;
-
-    const maxValue = q3 + iqr * coef;
-    const minValue = q1 - iqr * coef;
+    const maxValue = q3 + iqr * this.coefficient;
+    const minValue = q1 - iqr * this.coefficient;
 
     const result = [];
 
-    for (let i = 0; i < array.length; i++) {
-      if (array[i] <= maxValue && array[i] >= minValue) {
-        result[i] = array[i];
+    for (let i = 0; i < sample.length; i++) {
+      if (sample[i] <= maxValue && sample[i] >= minValue) {
+        result[i] = sample[i];
       } else {
         result[i] = NaN;
       }

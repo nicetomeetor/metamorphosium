@@ -4,10 +4,11 @@ import { createCollectorResult } from './utils';
 
 test('', () => {
   const firstCollectorResult = createCollectorResult([1, 2, 3, 4, 5, 100]);
-
   const secondCollectorResult = createCollectorResult([1, 2, 3, 4, 5, 100]);
 
-  const [firstFilteredSelection, secondFilteredSelection] = Filter.process(
+  const filter = new Filter(1.5);
+
+  const [firstFilteredSelection, secondFilteredSelection] = filter.evaluate(
     firstCollectorResult,
     secondCollectorResult
   );
@@ -25,10 +26,11 @@ test('', () => {
 
 test('', () => {
   const firstCollectorResult = createCollectorResult([1, 2, 100, 4, 5]);
-
   const secondCollectorResult = createCollectorResult([1, 2, 3, 100, 5]);
 
-  const [firstFilteredSelection] = Filter.process(
+  const filter = new Filter(1.5);
+
+  const [firstFilteredSelection] = filter.evaluate(
     firstCollectorResult,
     secondCollectorResult
   );
@@ -46,7 +48,9 @@ test('', () => {
   const firstCollectorResult = createCollectorResult(arr);
   const secondCollectorResult = createCollectorResult(arr);
 
-  const [firstFilteredSelection] = Filter.process(
+  const filter = new Filter(1.5);
+
+  const [firstFilteredSelection] = filter.evaluate(
     firstCollectorResult,
     secondCollectorResult
   );

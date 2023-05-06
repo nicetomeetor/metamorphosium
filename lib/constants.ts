@@ -1,22 +1,22 @@
 export const TIME = {
   EXECUTION: 'Execution time',
   WRITE_RESULT: 'Write result file time',
-  WRITE_FIRST_SELECTION: 'Write first selection file time',
-  WRITE_SECOND_SELECTION: 'Write second selection file time',
+  WRITE_FIRST_EXPERIMENT: 'Write first selection file time',
+  WRITE_SECOND_EXPERIMENT: 'Write second selection file time',
 } as const;
 
 export const INFO = {
   START: 'Launch the wizard',
   END: 'Complete the wizard',
-  FIRST_SELECTION: 'First selection',
-  SECOND_SELECTION: 'Second selection',
-  PRINT_TABLE: 'Result',
+  FIRST_EXPERIMENT: 'First experiment',
+  SECOND_EXPERIMENT: 'Second experiment',
+  PRINT_TABLE: 'Comparison result',
 } as const;
 
 export const FILE_NAME = {
   RESULT: 'result.json',
-  FIRST_SELECTION: 'first_selection.json',
-  SECOND_SELECTION: 'second_selection.json',
+  FIRST_EXPERIMENT: 'first_sample.json',
+  SECOND_EXPERIMENT: 'second_sample.json',
   LOGS: 'metamorphosium.logs',
 } as const;
 
