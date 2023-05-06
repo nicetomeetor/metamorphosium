@@ -1,8 +1,7 @@
-import { writeFileSync } from 'node:fs';
-
 import Comparator from './Comparator';
 import Collector from './Collector';
 import Filter from './Filter';
+import Logger from './Logger';
 
 import { CollectorOptions, TraceTasks } from './types';
 import { FILE_NAME, INFO, TIME } from './constants';
@@ -37,13 +36,11 @@ export default class Processor {
 
     console.info(INFO.FIRST_EXPERIMENT);
     const firstSelection = await collector.evaluate();
-    const firstSelectionJsonString = JSON.stringify(firstSelection);
 
     collector.setUrl(this.featureUrl);
 
     console.info(INFO.SECOND_EXPERIMENT);
     const secondSelection = await collector.evaluate();
-    const secondSelectionJsonString = JSON.stringify(secondSelection);
 
     const filter = new Filter(1.5);
 
@@ -65,18 +62,20 @@ export default class Processor {
     console.info(INFO.END);
     console.timeEnd(TIME.EXECUTION);
 
+    const firstSampleJsonString = JSON.stringify(firstSelection);
+    const secondSampleJsonString = JSON.stringify(secondSelection);
     const comparisonJsonString = JSON.stringify(comparison);
 
-    console.time(TIME.WRITE_FIRST_EXPERIMENT);
-    writeFileSync(FILE_NAME.FIRST_EXPERIMENT, firstSelectionJsonString);
-    console.timeEnd(TIME.WRITE_FIRST_EXPERIMENT);
-
-    console.time(TIME.WRITE_SECOND_EXPERIMENT);
-    writeFileSync(FILE_NAME.SECOND_EXPERIMENT, secondSelectionJsonString);
-    console.timeEnd(TIME.WRITE_SECOND_EXPERIMENT);
-
-    console.time(TIME.WRITE_RESULT);
-    writeFileSync(FILE_NAME.RESULT, comparisonJsonString);
-    console.timeEnd(TIME.WRITE_RESULT);
+    Logger.write(
+      TIME.WRITE_FIRST_EXPERIMENT,
+      FILE_NAME.FIRST_EXPERIMENT,
+      firstSampleJsonString
+    );
+    Logger.write(
+      TIME.WRITE_SECOND_EXPERIMENT,
+      FILE_NAME.SECOND_EXPERIMENT,
+      secondSampleJsonString
+    );
+    Logger.write(TIME.WRITE_RESULT, FILE_NAME.RESULT, comparisonJsonString);
   }
 }
