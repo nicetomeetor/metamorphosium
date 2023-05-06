@@ -39,10 +39,6 @@ export default class Processor {
     const firstSelection = await collector.evaluate();
     const firstSelectionJsonString = JSON.stringify(firstSelection);
 
-    console.time(TIME.WRITE_FIRST_EXPERIMENT);
-    writeFileSync(FILE_NAME.FIRST_EXPERIMENT, firstSelectionJsonString);
-    console.timeEnd(TIME.WRITE_FIRST_EXPERIMENT);
-
     collector.setUrl(this.featureUrl);
 
     console.info(INFO.SECOND_EXPERIMENT);
@@ -71,12 +67,16 @@ export default class Processor {
 
     const comparisonJsonString = JSON.stringify(comparison);
 
-    console.time(TIME.WRITE_RESULT);
-    writeFileSync(FILE_NAME.RESULT, comparisonJsonString);
-    console.timeEnd(TIME.WRITE_RESULT);
+    console.time(TIME.WRITE_FIRST_EXPERIMENT);
+    writeFileSync(FILE_NAME.FIRST_EXPERIMENT, firstSelectionJsonString);
+    console.timeEnd(TIME.WRITE_FIRST_EXPERIMENT);
 
     console.time(TIME.WRITE_SECOND_EXPERIMENT);
     writeFileSync(FILE_NAME.SECOND_EXPERIMENT, secondSelectionJsonString);
     console.timeEnd(TIME.WRITE_SECOND_EXPERIMENT);
+
+    console.time(TIME.WRITE_RESULT);
+    writeFileSync(FILE_NAME.RESULT, comparisonJsonString);
+    console.timeEnd(TIME.WRITE_RESULT);
   }
 }

@@ -9,6 +9,28 @@ export default class Filter {
     this.coefficient = coefficient;
   }
 
+  private execute(sample: Sample): Sample {
+    const q1 = quantile(sample, 0.25);
+    const q3 = quantile(sample, 0.75);
+
+    const iqr = q3 - q1;
+
+    const maxValue = q3 + iqr * this.coefficient;
+    const minValue = q1 - iqr * this.coefficient;
+
+    const result = [];
+
+    for (let i = 0; i < sample.length; i++) {
+      if (sample[i] <= maxValue && sample[i] >= minValue) {
+        result[i] = sample[i];
+      } else {
+        result[i] = NaN;
+      }
+    }
+
+    return result;
+  }
+
   public evaluate(
     firstResult: CollectorResult,
     secondResult: CollectorResult
@@ -54,27 +76,5 @@ export default class Filter {
     }
 
     return [firstMatchedSample, secondMatchedSample];
-  }
-
-  private execute(sample: Sample): Sample {
-    const q1 = quantile(sample, 0.25);
-    const q3 = quantile(sample, 0.75);
-
-    const iqr = q3 - q1;
-
-    const maxValue = q3 + iqr * this.coefficient;
-    const minValue = q1 - iqr * this.coefficient;
-
-    const result = [];
-
-    for (let i = 0; i < sample.length; i++) {
-      if (sample[i] <= maxValue && sample[i] >= minValue) {
-        result[i] = sample[i];
-      } else {
-        result[i] = NaN;
-      }
-    }
-
-    return result;
   }
 }

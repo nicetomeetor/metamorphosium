@@ -1,8 +1,8 @@
 export const TIME = {
   EXECUTION: 'Execution time',
   WRITE_RESULT: 'Write result file time',
-  WRITE_FIRST_EXPERIMENT: 'Write first selection file time',
-  WRITE_SECOND_EXPERIMENT: 'Write second selection file time',
+  WRITE_FIRST_EXPERIMENT: 'Write first experiment file time',
+  WRITE_SECOND_EXPERIMENT: 'Write second experiment file time',
 } as const;
 
 export const INFO = {

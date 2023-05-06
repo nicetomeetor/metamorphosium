@@ -17,79 +17,6 @@ export default class Comparator {
     this.result = {};
   }
 
-  private static isSameLength(
-    firstSample: Sample,
-    secondSample: Sample
-  ): boolean {
-    return firstSample.length === secondSample.length;
-  }
-
-  private static isEveryElementEqual(
-    firstSample: Sample,
-    secondSample: Sample
-  ): boolean {
-    for (let i = 0; i < firstSample.length; i++) {
-      if (firstSample[i] !== secondSample[i]) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-  private static isEqualSamples(firstSample: Sample, secondSample: Sample) {
-    return (
-      Comparator.isSameLength(firstSample, secondSample) &&
-      Comparator.isEveryElementEqual(firstSample, secondSample)
-    );
-  }
-
-  private static isElementZero(element: number): boolean {
-    return element === 0;
-  }
-
-  private static isEveryElementZero(sample: Sample): boolean {
-    return sample.every(Comparator.isElementZero);
-  }
-
-  private static testMannWhitney(
-    firstSample: Sample,
-    secondSample: Sample
-  ): [boolean, number] {
-    const isFirstSelectionEveryElementZero =
-      Comparator.isEveryElementZero(firstSample);
-    const isSecondSelectionEveryElementZero =
-      Comparator.isEveryElementZero(secondSample);
-
-    const isEveryElementZero =
-      isFirstSelectionEveryElementZero && isSecondSelectionEveryElementZero;
-
-    const isEqualSamples = Comparator.isEqualSamples(firstSample, secondSample);
-
-    if (isEveryElementZero || isEqualSamples) {
-      return [false, 1];
-    }
-
-    const { rejected, pValue } = wilcoxon(firstSample, secondSample);
-
-    return [rejected, pValue];
-  }
-
-  private static subtract(a: number, b: number): number {
-    return a - b;
-  }
-
-  private static subtractByFn(
-    fn: Function,
-    firstSample: Sample,
-    secondSample: Sample,
-    ...abstractFnParams: AbstractFnParams
-  ): number {
-    const firstResult = fn(firstSample, ...abstractFnParams);
-    const secondResult = fn(secondSample, ...abstractFnParams);
-
-    return Comparator.subtract(firstResult, secondResult);
-  }
-
   private addPercentiles(
     firstSample: Sample,
     secondSample: Sample,
@@ -163,5 +90,78 @@ export default class Comparator {
     }
 
     return this.result;
+  }
+
+  private static isSameLength(
+    firstSample: Sample,
+    secondSample: Sample
+  ): boolean {
+    return firstSample.length === secondSample.length;
+  }
+
+  private static isEveryElementEqual(
+    firstSample: Sample,
+    secondSample: Sample
+  ): boolean {
+    for (let i = 0; i < firstSample.length; i++) {
+      if (firstSample[i] !== secondSample[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+  private static isEqualSamples(firstSample: Sample, secondSample: Sample) {
+    return (
+      Comparator.isSameLength(firstSample, secondSample) &&
+      Comparator.isEveryElementEqual(firstSample, secondSample)
+    );
+  }
+
+  private static isElementZero(element: number): boolean {
+    return element === 0;
+  }
+
+  private static isEveryElementZero(sample: Sample): boolean {
+    return sample.every(Comparator.isElementZero);
+  }
+
+  private static testMannWhitney(
+    firstSample: Sample,
+    secondSample: Sample
+  ): [boolean, number] {
+    const isFirstSelectionEveryElementZero =
+      Comparator.isEveryElementZero(firstSample);
+    const isSecondSelectionEveryElementZero =
+      Comparator.isEveryElementZero(secondSample);
+
+    const isEveryElementZero =
+      isFirstSelectionEveryElementZero && isSecondSelectionEveryElementZero;
+
+    const isEqualSamples = Comparator.isEqualSamples(firstSample, secondSample);
+
+    if (isEveryElementZero || isEqualSamples) {
+      return [false, 1];
+    }
+
+    const { rejected, pValue } = wilcoxon(firstSample, secondSample);
+
+    return [rejected, pValue];
+  }
+
+  private static subtract(a: number, b: number): number {
+    return a - b;
+  }
+
+  private static subtractByFn(
+    fn: Function,
+    firstSample: Sample,
+    secondSample: Sample,
+    ...abstractFnParams: AbstractFnParams
+  ): number {
+    const firstResult = fn(firstSample, ...abstractFnParams);
+    const secondResult = fn(secondSample, ...abstractFnParams);
+
+    return Comparator.subtract(firstResult, secondResult);
   }
 }

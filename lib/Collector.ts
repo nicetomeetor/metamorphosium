@@ -51,17 +51,6 @@ export default class Collector {
     this.url = url;
   }
 
-  private static initialize(traceTasks: TraceTasks): CollectorResult {
-    const result: CollectorResult = {};
-
-    for (let i = 0; i < traceTasks.length; i++) {
-      const traceTask = traceTasks[i];
-      result[traceTask] = [];
-    }
-
-    return result;
-  }
-
   public async evaluate(): Promise<CollectorResult> {
     this.result = Collector.initialize(this.traceTasks);
 
@@ -90,32 +79,6 @@ export default class Collector {
     this.progress.stop();
 
     return this.result;
-  }
-
-  private static async clusterTask({
-    page,
-    data: collector,
-  }: TaskFunction<Collector>): Promise<void> {
-    await page.tracing.start();
-
-    await page.goto(collector.url, {
-      waitUntil: PAGE.WAIT_UNTIL,
-      timeout: PAGE.TIMEOUT,
-    });
-
-    const bufferTrace = (await page.tracing.stop())!;
-    const stringTrace = bufferTrace.toString();
-    const parsedTrace = JSON.parse(stringTrace);
-
-    const tasks = tracium.computeMainThreadTasks(parsedTrace, {
-      flatten: true,
-    });
-
-    const outcome: CollectorOutcome = collector.createOutcome();
-    const updatedOutcome = collector.updateOutcomeByTasks(tasks, outcome);
-
-    collector.updateResult(updatedOutcome);
-    collector.progress.increment();
   }
 
   private createOutcome(): CollectorOutcome {
@@ -155,6 +118,43 @@ export default class Collector {
       const metric = this.result[key];
       metric[metric.length] = value;
     }
+  }
+
+  private static initialize(traceTasks: TraceTasks): CollectorResult {
+    const result: CollectorResult = {};
+
+    for (let i = 0; i < traceTasks.length; i++) {
+      const traceTask = traceTasks[i];
+      result[traceTask] = [];
+    }
+
+    return result;
+  }
+
+  private static async clusterTask({
+    page,
+    data: collector,
+  }: TaskFunction<Collector>): Promise<void> {
+    await page.tracing.start();
+
+    await page.goto(collector.url, {
+      waitUntil: PAGE.WAIT_UNTIL,
+      timeout: PAGE.TIMEOUT,
+    });
+
+    const bufferTrace = (await page.tracing.stop())!;
+    const stringTrace = bufferTrace.toString();
+    const parsedTrace = JSON.parse(stringTrace);
+
+    const tasks = tracium.computeMainThreadTasks(parsedTrace, {
+      flatten: true,
+    });
+
+    const outcome: CollectorOutcome = collector.createOutcome();
+    const updatedOutcome = collector.updateOutcomeByTasks(tasks, outcome);
+
+    collector.updateResult(updatedOutcome);
+    collector.progress.increment();
   }
 
   private static clusterTaskError(err: Error): void {

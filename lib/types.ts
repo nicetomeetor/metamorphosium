@@ -19,21 +19,17 @@ export type CollectorOptions = {
   puppeteerOptions: PuppeteerNodeLaunchOptions;
 };
 
-export type CollectorOutcome = {
-  [key: string]: number;
+export type AbstractResult<Type> = {
+  [key: string]: Type;
 };
 
-export type CollectorResult = {
-  [key: string]: number[];
-};
+export type CollectorOutcome = AbstractResult<number>;
 
-export type ComparatorOutCome = {
-  [key: string]: number | boolean;
-};
+export type CollectorResult = AbstractResult<number[]>;
 
-export type ComparatorResult = {
-  [key: string]: ComparatorOutCome;
-};
+export type ComparatorOutCome = AbstractResult<number | boolean>;
+
+export type ComparatorResult = AbstractResult<ComparatorOutCome>;
 
 export type AbstractFnParam = unknown;
 
