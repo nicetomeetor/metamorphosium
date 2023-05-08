@@ -6,6 +6,8 @@ import { Cluster } from 'puppeteer-cluster';
 
 import Logger from './Logger';
 
+import { FILE_NAME } from './constants';
+
 import {
   TraceTasks,
   TraceTask,
@@ -158,6 +160,6 @@ export default class Collector {
   }
 
   private static clusterTaskError(err: Error): void {
-    Logger.print(err.message);
+    Logger.print(FILE_NAME.LOGS, err.message);
   }
 }

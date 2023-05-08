@@ -1,18 +1,16 @@
 import { writeFileSync, appendFileSync } from 'node:fs';
 
-import { FILE_NAME } from './constants';
-
 export default class Logger {
-  static print(message: string): void {
+  static print(fileName: string, message: string): void {
     const date = new Date();
     const processed = `[${date.toISOString()}] ${message}\n`;
 
-    appendFileSync(FILE_NAME.LOGS, processed);
+    appendFileSync(fileName, processed);
   }
 
-  static write(timeLabel: string, fileName: string, text: string): void {
+  static write(timeLabel: string, fileName: string, message: string): void {
     console.time(timeLabel);
-    writeFileSync(fileName, text);
+    writeFileSync(fileName, message);
     console.timeEnd(timeLabel);
   }
 }
