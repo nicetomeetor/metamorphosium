@@ -5,15 +5,18 @@ import { mean, quantile } from 'simple-statistics';
 import {
   AbstractFnParams,
   CollectorResult,
+  ComparatorConfig,
   ComparatorResult,
   Sample,
 } from './types';
-import { COMPARE, PERCENTILES } from './constants';
+import { COMPARE } from './constants';
 
 export default class Comparator {
   private result: ComparatorResult;
+  private config: ComparatorConfig;
 
-  constructor() {
+  constructor(config: ComparatorConfig) {
+    this.config = config;
     this.result = {};
   }
 
@@ -22,22 +25,17 @@ export default class Comparator {
     secondSample: Sample,
     traceTask: string
   ): void {
-    const percentiles = [
-      { name: PERCENTILES.P95, param: 0.25 },
-      { name: PERCENTILES.P50, param: 0.5 },
-      { name: PERCENTILES.P75, param: 0.75 },
-      { name: PERCENTILES.P95, param: 0.95 },
-    ];
+    const { percentiles } = this.config;
 
     for (let i = 0; i < percentiles.length; i++) {
       const percentile = percentiles[i];
-      const { name, param } = percentile;
+      const name = `${percentile * 100}th percentile`;
 
       this.result[traceTask][name] = Comparator.subtractByFn(
         quantile,
         firstSample,
         secondSample,
-        param
+        percentile
       );
     }
   }
@@ -82,11 +80,21 @@ export default class Comparator {
       const firstSample = firstCollectorResult[traceTask];
       const secondSample = secondCollectorResult[traceTask];
 
-      this.addPercentiles(firstSample, secondSample, traceTask);
-      this.addMean(firstSample, secondSample, traceTask);
-      this.addMannWhitney(firstSample, secondSample, traceTask);
+      if (Array.isArray(this.config.percentiles)) {
+        this.addPercentiles(firstSample, secondSample, traceTask);
+      }
 
-      this.addCount(traceTask, firstSample.length);
+      if (this.config.mean) {
+        this.addMean(firstSample, secondSample, traceTask);
+      }
+
+      if (this.config.mannWhitney) {
+        this.addMannWhitney(firstSample, secondSample, traceTask);
+      }
+
+      if (this.config.count) {
+        this.addCount(traceTask, firstSample.length);
+      }
     }
 
     return this.result;

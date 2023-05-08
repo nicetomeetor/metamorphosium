@@ -57,3 +57,10 @@ export type Task = {
 export type Tasks = Task[];
 
 export type Sample = number[];
+
+export type ComparatorConfig = {
+  percentiles: number[];
+  mean: boolean;
+  count: boolean;
+  mannWhitney: boolean;
+};

@@ -38,10 +38,3 @@ export const COMPARE = {
   P_VALUE: 'P-value',
   COUNT: 'Count',
 } as const;
-
-export const PERCENTILES = {
-  P95: '95th percentile',
-  P50: '50th percentile',
-  P75: '75th percentile',
-  P25: '25th percentile',
-} as const;

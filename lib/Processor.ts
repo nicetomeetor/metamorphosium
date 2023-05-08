@@ -49,7 +49,17 @@ export default class Processor {
       secondSelection
     );
 
-    const comparator = new Comparator();
+    const percentiles = [0.25, 0.5, 0.75, 0.95];
+    const mean = true;
+    const mannWhitney = true;
+    const count = true;
+
+    const comparator = new Comparator({
+      percentiles,
+      mean,
+      mannWhitney,
+      count,
+    });
 
     const comparison = comparator.compare(
       firstFilteredSelection,
@@ -71,11 +81,13 @@ export default class Processor {
       FILE_NAME.FIRST_EXPERIMENT,
       firstSampleJsonString
     );
+
     Logger.write(
       TIME.WRITE_SECOND_EXPERIMENT,
       FILE_NAME.SECOND_EXPERIMENT,
       secondSampleJsonString
     );
+
     Logger.write(TIME.WRITE_RESULT, FILE_NAME.RESULT, comparisonJsonString);
   }
 }
